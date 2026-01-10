@@ -1,2 +1,2 @@
-# crop-weed-classif
+# crop-weed-classificaiton
 
