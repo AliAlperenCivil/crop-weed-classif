@@ -27,9 +27,10 @@ The following machine learning models are evaluated:
 - Confusion matrices are visualized  
 - Misclassified samples are saved for further inspection  
 
-The best performance is achieved using the Random Forest model with approximately **97% accuracy**.
+The Random Forest classifier achieved the best performance with an accuracy of approximately 97% on the test set.
 
 ## Visualization
+The following visualizations provide insights into model performance and common misclassification cases.
 
 ### Confusion Matrix (Random Forest)
 ![Random Forest Confusion Matrix](assets/rf_confusion_matrix.jpeg)
