@@ -14,9 +14,7 @@ from sklearn.model_selection import cross_val_score
 from skimage.feature import graycomatrix, graycoprops, hog
 
 
-# =====================================================
-# 1. FEATURE ÇIKARMA
-# =====================================================
+# 1) Feature extraction
 def extract_features(image_path):
     img = cv.imread(image_path)
     if img is None:
@@ -26,7 +24,7 @@ def extract_features(image_path):
     hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
-    # Renk özellikleri
+    # Color features (HSV)
     h_mean = np.mean(hsv[:, :, 0])
     s_mean = np.mean(hsv[:, :, 1])
     v_mean = np.mean(hsv[:, :, 2])
@@ -36,12 +34,12 @@ def extract_features(image_path):
     mask = cv.inRange(hsv, lower_green, upper_green)
     green_ratio = np.count_nonzero(mask) / (128 * 128)
 
-    # Kontur özellikleri
+    # Contour-based features
     contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     contour_count = len(contours)
     area = sum(cv.contourArea(c) for c in contours)
 
-    # GLCM (doku)
+    # Texture features (GLCM)
     glcm = graycomatrix(
         gray,
         distances=[1],
@@ -53,7 +51,7 @@ def extract_features(image_path):
     contrast = graycoprops(glcm, 'contrast')[0, 0]
     homogeneity = graycoprops(glcm, 'homogeneity')[0, 0]
 
-    # HOG (kenar)
+    # Edge/gradient features (HOG)
     hog_feat = hog(
         gray,
         pixels_per_cell=(16, 16),
@@ -71,46 +69,49 @@ def extract_features(image_path):
     ]
 
 
-# =====================================================
-# 2. VERİ SETİ YÜKLEME (TRAIN / TEST AYRI)
-# =====================================================
-dataset_path = "C:/Users/alial/Downloads/DERSLER/Tasarim Calismasi 1/archive/agri_data/dataset_final"
-class_names = ["crop", "weed"]
+# 2) Dataset loading (train/test)
+dataset_path = os.environ.get("DATASET_PATH", "./dataset_final")
+class_names = ["crop", "weed"]  # 0=crop, 1=weed
 
 X_train, y_train = [], []
 X_test, y_test = [], []
+
+# Keep image paths for error analysis
+test_paths = []
 
 for label, class_name in enumerate(class_names):
 
     train_folder = os.path.join(dataset_path, "train", class_name)
     test_folder = os.path.join(dataset_path, "test", class_name)
 
-    for file in os.listdir(train_folder):
-        if file.lower().endswith((".jpg", ".jpeg", ".png")):
-            feat = extract_features(os.path.join(train_folder, file))
+    for filename in os.listdir(train_folder):
+        if filename.lower().endswith((".jpg", ".jpeg", ".png")):
+            img_path = os.path.join(train_folder, filename) 
+            feat = extract_features(img_path)
             if feat is not None:
                 X_train.append(feat)
                 y_train.append(label)
+                
 
-    for file in os.listdir(test_folder):
-        if file.lower().endswith((".jpg", ".jpeg", ".png")):
-            feat = extract_features(os.path.join(test_folder, file))
+    for filename in os.listdir(test_folder):
+        if filename.lower().endswith((".jpg", ".jpeg", ".png")):
+            img_path = os.path.join(test_folder, filename)  
+            feat = extract_features(img_path)
             if feat is not None:
                 X_test.append(feat)
                 y_test.append(label)
+                test_paths.append(img_path) 
 
 X_train = np.array(X_train)
 y_train = np.array(y_train)
 X_test = np.array(X_test)
 y_test = np.array(y_test)
 
-print(f"Train görüntü sayısı: {len(X_train)}")
-print(f"Test görüntü sayısı: {len(X_test)}")
+print(f"Train samples: {len(X_train)}")
+print(f"Test samples: {len(X_test)}")
 
 
-# =====================================================
-# 3. MODELLER
-# =====================================================
+# 3) Models
 models = {
     "Random Forest": RandomForestClassifier(
         n_estimators=200,
@@ -134,9 +135,7 @@ models = {
 }
 
 
-# =====================================================
-# 4. 5-FOLD CROSS VALIDATION (SADECE RANDOM FOREST)
-# =====================================================
+# 4) Cross-validation (Random Forest)
 print("\nRandom Forest 5-Fold Cross Validation:")
 rf_scores = cross_val_score(
     models["Random Forest"],
@@ -145,29 +144,66 @@ rf_scores = cross_val_score(
     cv=5
 )
 
-print("Fold doğrulukları:", rf_scores)
-print(f"Ortalama doğruluk: %{rf_scores.mean()*100:.2f}")
+print("Fold accuracies:", rf_scores)
+print(f"Mean accuracy: {rf_scores.mean()*100:.2f}%")
 
 
-# =====================================================
-# 5. EĞİTİM + TEST + CONFUSION MATRIX (TEK SAYFA)
-# =====================================================
+# 5) Training, evaluation & error analysis
 num_models = len(models)
 rows = math.ceil(num_models / 2)
 
 fig, axes = plt.subplots(rows, 2, figsize=(10, 8))
 axes = axes.flatten()
 
+# Output directory for misclassified samples
+out_dir = "misclassified_examples"
+os.makedirs(out_dir, exist_ok=True)
+
 for idx, (model_name, model) in enumerate(models.items()):
 
-    print(f"\n{model_name} eğitiliyor...")
+    print(f"\nTraining: {model_name}")
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
 
-    print(f"{model_name} Doğruluk: %{acc*100:.2f}")
+    print(f"Accuracy ({model_name}): {acc*100:.2f}%")
     print(classification_report(y_test, y_pred, target_names=class_names))
+
+    # Save a couple of misclassified samples (RF) for inspection
+    if model_name == "Random Forest":
+        wrong_idx = np.where(y_test != y_pred)[0]
+
+        false_weed_as_crop = None  # true=weed(1), pred=crop(0)
+        false_crop_as_weed = None  # true=crop(0), pred=weed(1)
+
+        for i in wrong_idx:
+            true_label = y_test[i]
+            pred_label = y_pred[i]
+
+            if true_label == 1 and pred_label == 0 and false_weed_as_crop is None:
+                false_weed_as_crop = test_paths[i]
+
+            if true_label == 0 and pred_label == 1 and false_crop_as_weed is None:
+                false_crop_as_weed = test_paths[i]
+
+            if false_weed_as_crop is not None and false_crop_as_weed is not None:
+                break
+
+        if false_weed_as_crop is not None:
+            img = cv.imread(false_weed_as_crop)
+            if img is not None:
+                cv.imwrite(os.path.join(out_dir, "RF_weed_as_crop.jpg"), img)
+
+        if false_crop_as_weed is not None:
+            img = cv.imread(false_crop_as_weed)
+            if img is not None:
+                cv.imwrite(os.path.join(out_dir, "RF_crop_as_weed.jpg"), img)
+
+        print("\n[Random Forest] Saved misclassified examples:")
+        print("Weed -> Crop:", false_weed_as_crop)
+        print("Crop -> Weed:", false_crop_as_weed)
+        print(f"Folder: {os.path.abspath(out_dir)}")
 
     cm = confusion_matrix(y_test, y_pred)
 
@@ -182,10 +218,10 @@ for idx, (model_name, model) in enumerate(models.items()):
     )
 
     axes[idx].set_title(model_name)
-    axes[idx].set_xlabel("Tahmin Edilen")
-    axes[idx].set_ylabel("Gerçek")
+    axes[idx].set_xlabel("Predicted")
+    axes[idx].set_ylabel("True")
 
-# Boş subplot varsa sil
+# Remove unused subplots
 for i in range(idx + 1, len(axes)):
     fig.delaxes(axes[i])
 
@@ -193,13 +229,11 @@ plt.tight_layout()
 plt.show()
 
 
-# =====================================================
-# 6. TEK GÖRÜNTÜ TESTİ
-# =====================================================
+# 6) Single image inference
 def classify_single_image(image_path, model):
     feat = extract_features(image_path)
     if feat is None:
-        return "Okunamadı"
+        return "Unreadable image"
 
     feat = np.array(feat).reshape(1, -1)
     return class_names[model.predict(feat)[0]]
@@ -212,6 +246,7 @@ test_image = os.path.join(
     "agri_0_9727.jpeg"
 )
 
-print("\nTek görüntü testi:")
+print("\nSingle image test:")
 for model_name, model in models.items():
     print(f"{model_name}: {classify_single_image(test_image, model)}")
+        
