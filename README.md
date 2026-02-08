@@ -34,14 +34,14 @@ The best performance is achieved using the Random Forest model with approximatel
 ## Visualization
 
 ### Confusion Matrix (Random Forest)
-![Random Forest Confusion Matrix](assets/rf_confusion_matrix.png)
+![Random Forest Confusion Matrix](assets/rf_confusion_matrix.jpeg)
 
 ### Misclassified Samples
 **Weed classified as Crop**  
-![Weed as Crop](assets/RF_weed_as_crop.jpg)
+![Weed as Crop](assets/rf_weed_as_crop.jpg)
 
 **Crop classified as Weed**  
-![Crop as Weed](assets/RF_crop_as_weed.jpg)
+![Crop as Weed](assets/rf_crop_as_weed.jpg)
 
 ## Dataset
 The dataset is expected to have the following structure:
