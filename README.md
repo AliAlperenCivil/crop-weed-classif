@@ -31,6 +31,18 @@ The following machine learning models are evaluated:
 
 The best performance is achieved using the Random Forest model with approximately **97% accuracy**.
 
+## Visualization
+
+### Confusion Matrix (Random Forest)
+![Random Forest Confusion Matrix](assets/rf_confusion_matrix.png)
+
+### Misclassified Samples
+**Weed classified as Crop**  
+![Weed as Crop](assets/RF_weed_as_crop.jpg)
+
+**Crop classified as Weed**  
+![Crop as Weed](assets/RF_crop_as_weed.jpg)
+
 ## Dataset
 The dataset is expected to have the following structure:
 
