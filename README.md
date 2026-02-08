@@ -1,4 +1,4 @@
-# Crop–Weed Classification using Image Processing and Machine Learning
+# Crop–Weed Classification using Classical Image Processing and Machine Learning
 
 This project focuses on classifying crop and weed images using
 classical image processing and machine learning techniques.
