@@ -70,7 +70,15 @@ def extract_features(image_path):
 
 
 # 2) Dataset loading (train/test)
+
+# Old Path:
+# dataset_path = os.environ.get("DATASET_PATH", "./dataset_final")
 dataset_path = os.environ.get("DATASET_PATH", "./dataset_final")
+
+# New Path:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+dataset_path = os.environ.get("DATASET_PATH", os.path.join(BASE_DIR, "dataset_final"))
+
 class_names = ["crop", "weed"]  # 0=crop, 1=weed
 
 X_train, y_train = [], []
