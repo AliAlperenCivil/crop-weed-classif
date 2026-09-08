@@ -46,13 +46,15 @@ The following visualizations provide insights into model performance and common 
 ## Dataset
 The dataset is expected to have the following structure:
 
+```
 dataset_final/
 ├── train/
-│ ├── crop/
-│ └── weed/
+│   ├── crop/
+│   └── weed/
 └── test/
-├── crop/
-└── weed/
+    ├── crop/
+    └── weed/
+```
 
 The dataset path can be specified using the `DATASET_PATH` environment variable.
 
@@ -60,8 +62,10 @@ The dataset path can be specified using the `DATASET_PATH` environment variable.
 Misclassified samples from the Random Forest model are saved in the `misclassified_examples/` directory.
 
 ## How to Run
+
 ```bash
 python classification.py
+```
 
 Make sure the dataset path is correctly set before running the script.
-If the dataset is not located in the project directory, set the path using the DATASET_PATH environment variable.
+If the dataset is not located in the project directory, set the path using the `DATASET_PATH` environment variable.
