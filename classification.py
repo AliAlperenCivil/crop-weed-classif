@@ -1,5 +1,7 @@
 import cv2 as cv
 import os
+import sys
+import argparse
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -70,14 +72,25 @@ def extract_features(image_path):
 
 
 # 2) Dataset loading (train/test)
-
-# Old Path:
-# dataset_path = os.environ.get("DATASET_PATH", "./dataset_final")
-dataset_path = os.environ.get("DATASET_PATH", "./dataset_final")
-
-# New Path:
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-dataset_path = os.environ.get("DATASET_PATH", os.path.join(BASE_DIR, "dataset_final"))
+default_dataset = os.environ.get("DATASET_PATH", os.path.join(BASE_DIR, "dataset_final"))
+
+parser = argparse.ArgumentParser(description="Crop vs Weed Classification")
+parser.add_argument(
+    "--dataset",
+    type=str,
+    default=default_dataset,
+    help=f"Path to dataset directory containing train/ and test/ (default: {default_dataset})"
+)
+args, _ = parser.parse_known_args()
+dataset_path = os.path.abspath(args.dataset)
+
+if not os.path.isdir(dataset_path):
+    print(f"Error: Dataset directory not found at: {dataset_path}")
+    print("Please provide a valid path via --dataset <path> or set the DATASET_PATH environment variable.")
+    sys.exit(1)
+
+print(f"Using dataset from: {dataset_path}")
 
 class_names = ["crop", "weed"]  # 0=crop, 1=weed
 
@@ -234,7 +247,10 @@ for i in range(idx + 1, len(axes)):
     fig.delaxes(axes[i])
 
 plt.tight_layout()
-plt.show()
+fig_output_path = os.path.join(BASE_DIR, "confusion_matrices.png")
+plt.savefig(fig_output_path, dpi=200, bbox_inches="tight")
+print(f"\nConfusion matrices saved to: {fig_output_path}")
+plt.close(fig)
 
 
 # 6) Single image inference
@@ -254,7 +270,32 @@ test_image = os.path.join(
     "agri_0_9727.jpeg"
 )
 
-print("\nSingle image test:")
+if not os.path.isfile(test_image) and len(test_paths) > 0:
+    test_image = test_paths[0]
+
+print(f"\nSingle image test (using {os.path.basename(test_image)}):")
 for model_name, model in models.items():
     print(f"{model_name}: {classify_single_image(test_image, model)}")
-        
+
+# 7) Overfitting check (Random Forest)
+# Compare accuracy on the training set, the held-out test set and the
+# out-of-bag (OOB) estimate. A small gap between them suggests the model
+# generalizes to unseen images drawn from the same dataset.
+rf = models["Random Forest"]  # already fitted in section 5
+
+print("\nOverfitting check (Random Forest):")
+print(f"Train accuracy: {rf.score(X_train, y_train):.4f}")
+print(f"Test accuracy:  {rf.score(X_test, y_test):.4f}")
+
+# The OOB estimate requires oob_score=True, so a separate forest with the
+# same hyperparameters is fitted here, leaving the main model untouched.
+# Each training sample is scored only by the trees whose bootstrap sample
+# did not include it, so the test set is never used.
+rf_oob = RandomForestClassifier(
+    n_estimators=200,
+    max_depth=10,
+    random_state=42,
+    oob_score=True
+)
+rf_oob.fit(X_train, y_train)
+print(f"OOB accuracy:   {rf_oob.oob_score_:.4f}")

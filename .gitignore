@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.py[cod]
+dataset_final/
+*.zip
+misclassified_examples/
+confusion_matrices.png
+tempCodeRunnerFile.py
+.vscode/
