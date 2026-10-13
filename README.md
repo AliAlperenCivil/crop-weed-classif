@@ -27,7 +27,14 @@ The following machine learning models are evaluated:
 - Confusion matrices are visualized  
 - Misclassified samples are saved for further inspection  
 
-The Random Forest classifier achieved the best performance with an accuracy of approximately 97% on the test set.
+The Random Forest classifier achieved the best performance with an accuracy of approximately 97% (96.91%) on the held-out test set.
+
+### Reproducibility & Deterministic Loading
+Image files are enumerated in deterministic alphabetical order (`sorted(os.listdir(...))`) during feature extraction to eliminate operating system-dependent directory traversal differences (e.g., Windows NTFS vs. Linux ext4 inode ordering). The official academic benchmark metrics reported in the study (BM331) are produced using this deterministic pipeline:
+- **Test Accuracy:** 96.91%
+- **5-Fold Cross-Validation:** 96.64% (Fold accuracies: `[0.9569, 0.9712, 0.9567, 0.9712, 0.9760]`)
+- **Out-of-Bag (OOB) Estimate:** 97.21%
+- **Training Set Accuracy:** 99.81%
 
 ## Visualization
 The following visualizations provide insights into model performance and common misclassification cases.
