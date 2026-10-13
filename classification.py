@@ -105,7 +105,7 @@ for label, class_name in enumerate(class_names):
     train_folder = os.path.join(dataset_path, "train", class_name)
     test_folder = os.path.join(dataset_path, "test", class_name)
 
-    for filename in os.listdir(train_folder):
+    for filename in sorted(os.listdir(train_folder)):
         if filename.lower().endswith((".jpg", ".jpeg", ".png")):
             img_path = os.path.join(train_folder, filename) 
             feat = extract_features(img_path)
@@ -114,7 +114,7 @@ for label, class_name in enumerate(class_names):
                 y_train.append(label)
                 
 
-    for filename in os.listdir(test_folder):
+    for filename in sorted(os.listdir(test_folder)):
         if filename.lower().endswith((".jpg", ".jpeg", ".png")):
             img_path = os.path.join(test_folder, filename)  
             feat = extract_features(img_path)
